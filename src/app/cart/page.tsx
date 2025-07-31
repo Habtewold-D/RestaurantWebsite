@@ -3,6 +3,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import Link from "next/link";
 
 export default function CartPage() {
   const { user, loading } = useAuth();
@@ -92,9 +93,12 @@ export default function CartPage() {
             <div className="border-t pt-6 mt-6">
               <div className="flex justify-between items-center">
                 <span className="text-2xl font-bold text-black">Total: ETB {cart.total.toFixed(2)}</span>
-                <button className="bg-gradient-to-r from-orange-400 to-rose-400 text-white px-6 py-3 rounded-lg font-medium hover:from-orange-500 hover:to-rose-500 transition">
-                  Checkout
-                </button>
+                <Link
+                  href="/checkout"
+                  className="bg-gradient-to-r from-orange-400 to-rose-400 text-white px-6 py-3 rounded-lg font-medium hover:from-orange-500 hover:to-rose-500 transition"
+                >
+                  Proceed to Checkout
+                </Link>
               </div>
             </div>
           </div>

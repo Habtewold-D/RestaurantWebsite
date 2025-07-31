@@ -46,7 +46,7 @@ export default function HomePage() {
 
   const renderImage = (image: string) => {
     if (image && image.startsWith('http')) {
-      return (
+  return (
         <img
           src={image}
           alt="Menu item"
@@ -95,7 +95,7 @@ export default function HomePage() {
             <Link
               href="/about"
               className="bg-white text-orange-700 px-8 py-4 rounded-lg text-lg font-medium hover:bg-orange-50 transition shadow-lg border border-orange-200"
-            >
+          >
               Learn About Us
             </Link>
           </div>
