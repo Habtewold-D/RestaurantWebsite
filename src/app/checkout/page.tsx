@@ -10,6 +10,7 @@ import {
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js";
+import { PayPalButtons } from "@paypal/react-paypal-js";
 
 // Load Stripe
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
@@ -71,9 +72,53 @@ function CheckoutForm() {
         disabled={!stripe || isLoading}
         className="w-full bg-gradient-to-r from-orange-400 to-rose-400 text-white py-3 rounded-lg font-medium hover:from-orange-500 hover:to-rose-500 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
       >
-        {isLoading ? "Processing..." : `Pay $${usdTotal}`}
+        {isLoading ? "Processing..." : `Pay with Card $${usdTotal}`}
       </button>
     </form>
+  );
+}
+
+function PayPalCheckout() {
+  const { cart } = useCart();
+  const router = useRouter();
+  
+  // Calculate USD equivalent (approximate rate: 1 USD = 138 ETB)
+  const etbTotal = cart.total + 50;
+  const usdTotal = (etbTotal / 138).toFixed(2);
+
+  return (
+    <div className="space-y-4">
+      <div className="text-center">
+        <p className="text-gray-600 mb-4">Pay with PayPal</p>
+      </div>
+      
+      <PayPalButtons
+        createOrder={(data, actions) => {
+          return actions.order.create({
+            intent: "CAPTURE",
+            purchase_units: [
+              {
+                amount: {
+                  value: usdTotal,
+                  currency_code: "USD",
+                },
+                description: "Restaurant Order",
+              },
+            ],
+          });
+        }}
+        onApprove={(data, actions) => {
+          return actions.order!.capture().then((details) => {
+            console.log("Payment completed:", details);
+            router.push("/order-success");
+          });
+        }}
+        onError={(err) => {
+          console.error("PayPal error:", err);
+        }}
+        style={{ layout: "vertical" }}
+      />
+    </div>
   );
 }
 
@@ -83,6 +128,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [loadingPayment, setLoadingPayment] = useState(true);
+  const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'paypal'>('stripe');
 
   useEffect(() => {
     if (!loading && !user) {
@@ -91,10 +137,12 @@ export default function CheckoutPage() {
   }, [user, loading, router]);
 
   useEffect(() => {
-    if (user && cart.total > 0) {
+    if (user && cart.total > 0 && paymentMethod === 'stripe') {
       createPaymentIntent();
+    } else if (paymentMethod === 'paypal') {
+      setLoadingPayment(false);
     }
-  }, [user, cart.total]);
+  }, [user, cart.total, paymentMethod]);
 
   const createPaymentIntent = async () => {
     try {
@@ -182,7 +230,7 @@ export default function CheckoutPage() {
               <div className="border-t pt-4 space-y-2">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal:</span>
-                  <span className="font-bold text-black">ETB {cart.total.toFixed(2)}</span>
+                  <span className="font-bold">ETB {cart.total.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Delivery Fee:</span>
@@ -200,21 +248,53 @@ export default function CheckoutPage() {
 
             {/* Payment Form */}
             <div className="bg-white/90 rounded-2xl shadow-xl p-6 border border-orange-200">
-              <h2 className="text-2xl font-bold text-orange-700 mb-6">Payment</h2>
+              <h2 className="text-2xl font-bold text-orange-700 mb-6">Payment Method</h2>
               
-              {loadingPayment ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-700 mx-auto mb-4"></div>
-                  <p className="text-gray-600">Setting up payment...</p>
+              {/* Payment Method Selection */}
+              <div className="mb-6">
+                <div className="flex space-x-4 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('stripe')}
+                    className={`flex-1 py-3 px-4 rounded-lg border-2 font-medium transition ${
+                      paymentMethod === 'stripe'
+                        ? 'border-orange-500 bg-orange-50 text-orange-700'
+                        : 'border-gray-300 text-gray-600 hover:border-orange-300'
+                    }`}
+                  >
+                    💳 Credit/Debit Card
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('paypal')}
+                    className={`flex-1 py-3 px-4 rounded-lg border-2 font-medium transition ${
+                      paymentMethod === 'paypal'
+                        ? 'border-orange-500 bg-orange-50 text-orange-700'
+                        : 'border-gray-300 text-gray-600 hover:border-orange-300'
+                    }`}
+                  >
+                    🅿️ PayPal
+                  </button>
                 </div>
-              ) : clientSecret ? (
-                <Elements stripe={stripePromise} options={{ clientSecret }}>
-                  <CheckoutForm />
-                </Elements>
+              </div>
+              
+              {paymentMethod === 'stripe' ? (
+                loadingPayment ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-700 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Setting up payment...</p>
+                  </div>
+                ) : clientSecret ? (
+                  <Elements stripe={stripePromise} options={{ clientSecret }}>
+                    <CheckoutForm />
+                  </Elements>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-red-600">Failed to initialize payment</p>
+                  </div>
+                )
               ) : (
-                <div className="text-center py-8">
-                  <p className="text-red-600">Failed to initialize payment</p>
-                </div>
+                <PayPalCheckout />
               )}
             </div>
           </div>
