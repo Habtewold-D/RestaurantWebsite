@@ -1,5 +1,6 @@
 "use client";
 import { useAuth } from "@/context/AuthContext";
+import { useCart } from "@/context/CartContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { MenuItem, MenuCategory } from "@/types/menu";
@@ -7,6 +8,7 @@ import { getMenuItems, getCategories } from "@/lib/menuService";
 
 export default function MenuPage() {
   const { user, loading } = useAuth();
+  const { addItem } = useCart();
   const router = useRouter();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
@@ -41,6 +43,12 @@ export default function MenuPage() {
     }
   };
 
+  const handleAddToCart = (item: MenuItem) => {
+    addItem(item);
+    // You could add a toast notification here
+    console.log(`Added ${item.name} to cart`);
+  };
+
   const renderImage = (image: string) => {
     if (image && image.startsWith('http')) {
       return (
@@ -48,15 +56,16 @@ export default function MenuPage() {
           <img
             src={image}
             alt="Menu item"
-            className="w-[90%] h-56 object-cover rounded-lg mx-auto shadow-md"
+            className="w-full h-64 object-cover rounded-lg mx-auto shadow-md"
             onError={(e) => {
+              console.log("Menu image failed to load:", image);
               const target = e.currentTarget as HTMLImageElement;
               target.style.display = 'none';
               const fallback = target.nextElementSibling as HTMLElement;
               if (fallback) fallback.style.display = 'block';
             }}
           />
-          <div className="w-[90%] h-56 bg-gray-200 rounded-lg mx-auto flex items-center justify-center text-5xl" style={{ display: 'none' }}>
+          <div className="w-full h-64 bg-gray-200 rounded-lg mx-auto flex items-center justify-center text-6xl" style={{ display: 'none' }}>
             🍽️
           </div>
         </div>
@@ -182,8 +191,9 @@ export default function MenuPage() {
                             <h3 className="text-xl font-bold text-orange-700 mb-2">{item.name}</h3>
                             <p className="text-gray-600 mb-4 text-sm">{item.description}</p>
                             <div className="flex justify-between items-center">
-                              <span className="text-2xl font-bold text-orange-600">ETB {item.price}</span>
+                              <span className="text-2xl font-bold text-black">ETB {item.price}</span>
                               <button 
+                                onClick={() => handleAddToCart(item)}
                                 className={`px-4 py-2 rounded-lg font-medium transition shadow-md ${
                                   item.available
                                     ? "bg-gradient-to-r from-orange-400 to-rose-400 text-white hover:from-orange-500 hover:to-rose-500"
@@ -219,8 +229,9 @@ export default function MenuPage() {
                       <h3 className="text-xl font-bold text-orange-700 mb-2">{item.name}</h3>
                       <p className="text-gray-600 mb-4 text-sm">{item.description}</p>
                       <div className="flex justify-between items-center">
-                        <span className="text-2xl font-bold text-orange-600">ETB {item.price}</span>
+                        <span className="text-2xl font-bold text-black">ETB {item.price}</span>
                         <button 
+                          onClick={() => handleAddToCart(item)}
                           className={`px-4 py-2 rounded-lg font-medium transition shadow-md ${
                             item.available
                               ? "bg-gradient-to-r from-orange-400 to-rose-400 text-white hover:from-orange-500 hover:to-rose-500"

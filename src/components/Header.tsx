@@ -1,5 +1,6 @@
 "use client";
 import { useAuth } from "@/context/AuthContext";
+import { useCart } from "@/context/CartContext";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
@@ -7,6 +8,7 @@ import Link from "next/link";
 
 export default function Header() {
   const { user, role } = useAuth();
+  const { cart } = useCart();
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -47,8 +49,18 @@ export default function Header() {
             )}
           </nav>
 
-          {/* User Info and Logout */}
+          {/* User Info, Cart, and Logout */}
           <div className="flex items-center space-x-4">
+            {/* Cart Icon */}
+            <Link href="/cart" className="relative text-gray-700 hover:text-orange-600 transition">
+              <span className="text-2xl">🛒</span>
+              {cart.itemCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {cart.itemCount}
+                </span>
+              )}
+            </Link>
+            
             <div className="text-sm text-gray-600">
               <span className="font-medium">{user.email}</span>
               <span className="ml-2 px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs">
@@ -75,6 +87,14 @@ export default function Header() {
             </Link>
             <Link href="/about" className="text-gray-700 hover:text-orange-600 font-medium transition py-2">
               About
+            </Link>
+            <Link href="/cart" className="text-gray-700 hover:text-orange-600 font-medium transition py-2 flex items-center">
+              Cart
+              {cart.itemCount > 0 && (
+                <span className="ml-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {cart.itemCount}
+                </span>
+              )}
             </Link>
             {role === "admin" && (
               <Link href="/admin" className="text-gray-700 hover:text-orange-600 font-medium transition py-2">

@@ -264,8 +264,9 @@ export default function MenuManagement() {
                   <img 
                     src={item.image} 
                     alt={item.name}
-                    className="w-[90%] h-56 object-cover rounded-lg mx-auto shadow-md"
+                    className="w-full h-64 object-cover rounded-lg mx-auto shadow-md"
                     onError={(e) => {
+                      console.log("Image failed to load:", item.image);
                       const target = e.currentTarget as HTMLImageElement;
                       target.style.display = 'none';
                       const fallback = target.nextElementSibling as HTMLElement;
@@ -273,14 +274,18 @@ export default function MenuManagement() {
                     }}
                   />
                 ) : (
-                  <div className="w-[90%] h-56 bg-gray-200 rounded-lg mx-auto flex items-center justify-center text-5xl">
+                  <div className="w-full h-64 bg-gray-200 rounded-lg mx-auto flex items-center justify-center text-6xl">
                     {item.image || '🍽️'}
                   </div>
                 )}
+                {/* Debug info */}
+                <div className="text-xs text-gray-500 mt-2">
+                  Image: {item.image ? (item.image.length > 50 ? item.image.substring(0, 50) + '...' : item.image) : 'No image'}
+                </div>
               </div>
               <h3 className="text-xl font-bold text-orange-700 mb-2">{item.name}</h3>
               <p className="text-gray-600 mb-2 text-sm">{item.description}</p>
-              <p className="text-2xl font-bold text-orange-600 mb-2">ETB {item.price}</p>
+              <p className="text-2xl font-bold text-black mb-2">ETB {item.price}</p>
               <p className="text-sm text-gray-500 mb-3">Category: {item.category}</p>
               <div className="flex gap-2">
                 <button
