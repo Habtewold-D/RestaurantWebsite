@@ -32,15 +32,15 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
-      <form onSubmit={handleSignUp} className="bg-white p-8 rounded shadow-md w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-6 text-center">Sign Up</h2>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-rose-200 via-orange-100 to-yellow-200">
+      <form onSubmit={handleSignUp} className="bg-white/90 p-10 rounded-3xl shadow-2xl w-full max-w-md border border-orange-200">
+        <h2 className="text-3xl font-extrabold mb-6 text-center text-orange-700 drop-shadow">Create an Account</h2>
         <input
           type="email"
           placeholder="Email"
           value={email}
           onChange={e => setEmail(e.target.value)}
-          className="w-full p-2 mb-4 border rounded"
+          className="w-full p-3 mb-4 border border-orange-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 text-gray-600 placeholder-gray-500"
           required
         />
         <input
@@ -48,19 +48,19 @@ export default function SignUpPage() {
           placeholder="Password"
           value={password}
           onChange={e => setPassword(e.target.value)}
-          className="w-full p-2 mb-4 border rounded"
+          className="w-full p-3 mb-4 border border-orange-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 text-gray-600 placeholder-gray-500"
           required
         />
-        {error && <p className="text-red-500 mb-4">{error}</p>}
+        {error && <p className="text-red-500 mb-4 text-center">{error}</p>}
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+          className="w-full bg-gradient-to-r from-orange-400 to-rose-400 text-white py-3 rounded-lg font-semibold hover:from-orange-500 hover:to-rose-500 transition shadow-lg"
           disabled={loading}
         >
           {loading ? "Signing Up..." : "Sign Up"}
         </button>
-        <p className="mt-4 text-center text-sm">
-          Already have an account? <a href="/login" className="text-blue-600 hover:underline">Login</a>
+        <p className="mt-6 text-center text-sm text-gray-700">
+          Already have an account? <a href="/login" className="text-orange-600 hover:underline font-semibold">Login</a>
         </p>
       </form>
     </div>

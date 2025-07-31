@@ -1,0 +1,89 @@
+"use client";
+import { useAuth } from "@/context/AuthContext";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+
+export default function Header() {
+  const { user, role } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.push("/login");
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
+  };
+
+  if (!user) return null;
+
+  return (
+    <header className="bg-white/90 backdrop-blur-sm shadow-lg border-b border-orange-200">
+      <div className="container mx-auto px-4 py-4">
+        <div className="flex items-center justify-between">
+          {/* Logo */}
+          <Link href="/" className="text-2xl font-bold text-orange-700 hover:text-orange-800 transition">
+            🍽️ Restaurant
+          </Link>
+
+          {/* Navigation Links */}
+          <nav className="hidden md:flex items-center space-x-8">
+            <Link href="/" className="text-gray-700 hover:text-orange-600 font-medium transition">
+              Home
+            </Link>
+            <Link href="/menu" className="text-gray-700 hover:text-orange-600 font-medium transition">
+              Menu
+            </Link>
+            <Link href="/about" className="text-gray-700 hover:text-orange-600 font-medium transition">
+              About
+            </Link>
+            {role === "admin" && (
+              <Link href="/admin" className="text-gray-700 hover:text-orange-600 font-medium transition">
+                Admin
+              </Link>
+            )}
+          </nav>
+
+          {/* User Info and Logout */}
+          <div className="flex items-center space-x-4">
+            <div className="text-sm text-gray-600">
+              <span className="font-medium">{user.email}</span>
+              <span className="ml-2 px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs">
+                {role}
+              </span>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="bg-gradient-to-r from-orange-400 to-rose-400 text-white px-4 py-2 rounded-lg font-medium hover:from-orange-500 hover:to-rose-500 transition shadow-md"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Navigation */}
+        <div className="md:hidden mt-4 pt-4 border-t border-orange-200">
+          <nav className="flex flex-col space-y-2">
+            <Link href="/" className="text-gray-700 hover:text-orange-600 font-medium transition py-2">
+              Home
+            </Link>
+            <Link href="/menu" className="text-gray-700 hover:text-orange-600 font-medium transition py-2">
+              Menu
+            </Link>
+            <Link href="/about" className="text-gray-700 hover:text-orange-600 font-medium transition py-2">
+              About
+            </Link>
+            {role === "admin" && (
+              <Link href="/admin" className="text-gray-700 hover:text-orange-600 font-medium transition py-2">
+                Admin
+              </Link>
+            )}
+          </nav>
+        </div>
+      </div>
+    </header>
+  );
+} 
