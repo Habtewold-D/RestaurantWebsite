@@ -3,19 +3,20 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import MenuManagement from "@/components/MenuManagement";
+import OrderManagement from "@/components/OrderManagement";
+import ReviewManagement from "@/components/ReviewManagement";
+import AnalyticsDashboard from "@/components/AnalyticsDashboard";
 
 export default function AdminPage() {
   const { user, role, loading } = useAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("menu");
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'menu' | 'orders' | 'reviews' | 'analytics'>('dashboard');
 
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        router.push("/login");
-      } else if (role !== "admin") {
-        router.push("/"); // Redirect non-admin users to home
-      }
+    if (!loading && !user) {
+      router.push("/login");
+    } else if (user && role !== 'admin') {
+      router.push("/");
     }
   }, [user, role, loading, router]);
 
@@ -27,7 +28,7 @@ export default function AdminPage() {
     );
   }
 
-  if (!user || role !== "admin") {
+  if (!user || role !== 'admin') {
     return null;
   }
 
@@ -39,79 +40,118 @@ export default function AdminPage() {
         </h1>
 
         {/* Tab Navigation */}
-        <div className="max-w-6xl mx-auto mb-8">
-          <div className="bg-white/90 rounded-2xl shadow-xl p-2 border border-orange-200">
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setActiveTab("menu")}
-                className={`flex-1 py-3 px-6 rounded-xl font-medium transition ${
-                  activeTab === "menu"
-                    ? "bg-gradient-to-r from-orange-400 to-rose-400 text-white shadow-md"
-                    : "text-gray-700 hover:text-orange-600"
-                }`}
-              >
-                🍽️ Menu Management
-              </button>
-              <button
-                onClick={() => setActiveTab("dashboard")}
-                className={`flex-1 py-3 px-6 rounded-xl font-medium transition ${
-                  activeTab === "dashboard"
-                    ? "bg-gradient-to-r from-orange-400 to-rose-400 text-white shadow-md"
-                    : "text-gray-700 hover:text-orange-600"
-                }`}
-              >
-                📊 Dashboard
-              </button>
-            </div>
+        <div className="flex justify-center mb-8">
+          <div className="bg-white/90 rounded-lg p-1 shadow-lg border border-orange-200">
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className={`px-6 py-3 rounded-md font-medium transition ${
+                activeTab === 'dashboard'
+                  ? 'bg-orange-500 text-white'
+                  : 'text-gray-600 hover:text-orange-700'
+              }`}
+            >
+              📊 Dashboard
+            </button>
+            <button
+              onClick={() => setActiveTab('analytics')}
+              className={`px-6 py-3 rounded-md font-medium transition ${
+                activeTab === 'analytics'
+                  ? 'bg-orange-500 text-white'
+                  : 'text-gray-600 hover:text-orange-700'
+              }`}
+            >
+              📈 Analytics
+            </button>
+            <button
+              onClick={() => setActiveTab('menu')}
+              className={`px-6 py-3 rounded-md font-medium transition ${
+                activeTab === 'menu'
+                  ? 'bg-orange-500 text-white'
+                  : 'text-gray-600 hover:text-orange-700'
+              }`}
+            >
+              🍽️ Menu Management
+            </button>
+            <button
+              onClick={() => setActiveTab('orders')}
+              className={`px-6 py-3 rounded-md font-medium transition ${
+                activeTab === 'orders'
+                  ? 'bg-orange-500 text-white'
+                  : 'text-gray-600 hover:text-orange-700'
+              }`}
+            >
+              📋 Order Management
+            </button>
+            <button
+              onClick={() => setActiveTab('reviews')}
+              className={`px-6 py-3 rounded-md font-medium transition ${
+                activeTab === 'reviews'
+                  ? 'bg-orange-500 text-white'
+                  : 'text-gray-600 hover:text-orange-700'
+              }`}
+            >
+              ⭐ Review Management
+            </button>
           </div>
         </div>
 
         {/* Tab Content */}
-        <div className="max-w-6xl mx-auto">
-          {activeTab === "menu" && <MenuManagement />}
-          
-          {activeTab === "dashboard" && (
-            <div className="space-y-8">
-              {/* Stats Cards */}
-              <div className="grid md:grid-cols-4 gap-6">
-                <div className="bg-white/90 rounded-xl shadow-lg p-6 border border-orange-200">
-                  <div className="text-3xl font-bold text-orange-700">150</div>
-                  <div className="text-gray-600">Total Orders</div>
-                </div>
-                <div className="bg-white/90 rounded-xl shadow-lg p-6 border border-orange-200">
-                  <div className="text-3xl font-bold text-orange-700">$2,450</div>
-                  <div className="text-gray-600">Today's Revenue</div>
-                </div>
-                <div className="bg-white/90 rounded-xl shadow-lg p-6 border border-orange-200">
-                  <div className="text-3xl font-bold text-orange-700">25</div>
-                  <div className="text-gray-600">Active Users</div>
-                </div>
-                <div className="bg-white/90 rounded-xl shadow-lg p-6 border border-orange-200">
-                  <div className="text-3xl font-bold text-orange-700">4.8</div>
-                  <div className="text-gray-600">Avg Rating</div>
-                </div>
-              </div>
-
-              {/* Quick Actions */}
-              <div className="bg-white/90 rounded-2xl shadow-xl p-8 border border-orange-200">
-                <h2 className="text-2xl font-bold text-orange-700 mb-6">Quick Actions</h2>
-                <div className="grid md:grid-cols-4 gap-4">
-                  <button className="bg-gradient-to-r from-green-400 to-blue-400 text-white py-3 rounded-lg font-medium hover:from-green-500 hover:to-blue-500 transition shadow-md">
-                    📊 Reports
+        <div className="bg-white/90 rounded-2xl shadow-xl p-8 border border-orange-200">
+          {activeTab === 'dashboard' && (
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-orange-700 mb-4">Welcome, Admin!</h2>
+              <p className="text-gray-600 mb-8">
+                Manage your restaurant's menu, orders, reviews, and view analytics from this dashboard.
+              </p>
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
+                <div className="bg-orange-50 p-6 rounded-lg border border-orange-200">
+                  <h3 className="text-lg font-bold text-orange-700 mb-2">Analytics</h3>
+                  <p className="text-gray-600 mb-4">View sales reports and business insights.</p>
+                  <button
+                    onClick={() => setActiveTab('analytics')}
+                    className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition"
+                  >
+                    View Analytics
                   </button>
-                  <button className="bg-gradient-to-r from-purple-400 to-pink-400 text-white py-3 rounded-lg font-medium hover:from-purple-500 hover:to-pink-500 transition shadow-md">
-                    ⚙️ Settings
+                </div>
+                <div className="bg-orange-50 p-6 rounded-lg border border-orange-200">
+                  <h3 className="text-lg font-bold text-orange-700 mb-2">Menu Management</h3>
+                  <p className="text-gray-600 mb-4">Add, edit, and manage menu items and categories.</p>
+                  <button
+                    onClick={() => setActiveTab('menu')}
+                    className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition"
+                  >
+                    Manage Menu
                   </button>
-                  <button className="bg-gradient-to-r from-blue-400 to-indigo-400 text-white py-3 rounded-lg font-medium hover:from-blue-500 hover:to-indigo-500 transition shadow-md">
-                    📧 Notifications
+                </div>
+                <div className="bg-orange-50 p-6 rounded-lg border border-orange-200">
+                  <h3 className="text-lg font-bold text-orange-700 mb-2">Order Management</h3>
+                  <p className="text-gray-600 mb-4">View and update order statuses.</p>
+                  <button
+                    onClick={() => setActiveTab('orders')}
+                    className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition"
+                  >
+                    Manage Orders
                   </button>
-                  <button className="bg-gradient-to-r from-red-400 to-orange-400 text-white py-3 rounded-lg font-medium hover:from-red-500 hover:to-orange-500 transition shadow-md">
-                    🔒 Security
+                </div>
+                <div className="bg-orange-50 p-6 rounded-lg border border-orange-200">
+                  <h3 className="text-lg font-bold text-orange-700 mb-2">Review Management</h3>
+                  <p className="text-gray-600 mb-4">Moderate customer reviews and ratings.</p>
+                  <button
+                    onClick={() => setActiveTab('reviews')}
+                    className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition"
+                  >
+                    Manage Reviews
                   </button>
                 </div>
               </div>
             </div>
           )}
+          
+          {activeTab === 'analytics' && <AnalyticsDashboard />}
+          {activeTab === 'menu' && <MenuManagement />}
+          {activeTab === 'orders' && <OrderManagement />}
+          {activeTab === 'reviews' && <ReviewManagement />}
         </div>
       </div>
     </div>

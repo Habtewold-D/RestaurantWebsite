@@ -3,8 +3,12 @@ import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { MenuItem, MenuCategory } from "@/types/menu";
+import { MenuItem, MenuCategory, Review } from "@/types/menu";
 import { getMenuItems, getCategories } from "@/lib/menuService";
+import { getMenuItemReviews } from "@/lib/reviewService";
+import StarRating from "@/components/StarRating";
+import ReviewForm from "@/components/ReviewForm";
+import ReviewDisplay from "@/components/ReviewDisplay";
 
 export default function MenuPage() {
   const { user, loading } = useAuth();
@@ -14,6 +18,10 @@ export default function MenuPage() {
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [loadingMenu, setLoadingMenu] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [itemReviews, setItemReviews] = useState<Review[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -45,8 +53,45 @@ export default function MenuPage() {
 
   const handleAddToCart = (item: MenuItem) => {
     addItem(item);
-    // You could add a toast notification here
     console.log(`Added ${item.name} to cart`);
+  };
+
+  const handleViewReviews = async (item: MenuItem) => {
+    setSelectedItem(item);
+    setShowReviewModal(true);
+    setLoadingReviews(true);
+    
+    try {
+      const reviews = await getMenuItemReviews(item.id);
+      setItemReviews(reviews);
+    } catch (error) {
+      console.error("Error loading reviews:", error);
+    } finally {
+      setLoadingReviews(false);
+    }
+  };
+
+  const handleReviewSubmitted = async () => {
+    if (selectedItem) {
+      // Refresh reviews
+      setLoadingReviews(true);
+      try {
+        const reviews = await getMenuItemReviews(selectedItem.id);
+        setItemReviews(reviews);
+        
+        // Update the menu item in the list with new rating
+        const updatedItems = menuItems.map(item => 
+          item.id === selectedItem.id 
+            ? { ...item, reviews: reviews, totalReviews: reviews.length }
+            : item
+        );
+        setMenuItems(updatedItems);
+      } catch (error) {
+        console.error("Error refreshing reviews:", error);
+      } finally {
+        setLoadingReviews(false);
+      }
+    }
   };
 
   const renderImage = (image: string) => {
@@ -56,7 +101,7 @@ export default function MenuPage() {
           <img
             src={image}
             alt="Menu item"
-            className="w-full h-64 object-cover rounded-lg mx-auto shadow-md"
+            className="w-[90%] h-56 object-cover rounded-lg mx-auto shadow-md"
             onError={(e) => {
               console.log("Menu image failed to load:", image);
               const target = e.currentTarget as HTMLImageElement;
@@ -65,7 +110,7 @@ export default function MenuPage() {
               if (fallback) fallback.style.display = 'block';
             }}
           />
-          <div className="w-full h-64 bg-gray-200 rounded-lg mx-auto flex items-center justify-center text-6xl" style={{ display: 'none' }}>
+          <div className="w-[90%] h-56 bg-gray-200 rounded-lg mx-auto flex items-center justify-center text-5xl" style={{ display: 'none' }}>
             🍽️
           </div>
         </div>
@@ -96,12 +141,10 @@ export default function MenuPage() {
     return null;
   }
 
-  // Filter menu items by selected category
   const filteredItems = selectedCategory === "all" 
     ? menuItems 
     : menuItems.filter(item => item.category === selectedCategory);
 
-  // Group items by category
   const itemsByCategory = categories.reduce((acc, category) => {
     const categoryItems = menuItems.filter(item => item.category === category.name);
     if (categoryItems.length > 0) {
@@ -167,7 +210,6 @@ export default function MenuPage() {
 
             {/* Menu Items Display */}
             {selectedCategory === "all" ? (
-              // Show items grouped by category
               <div className="space-y-12">
                 {categories.map((category) => {
                   const categoryItems = itemsByCategory[category.name];
@@ -190,6 +232,27 @@ export default function MenuPage() {
                             {renderImage(item.image)}
                             <h3 className="text-xl font-bold text-orange-700 mb-2">{item.name}</h3>
                             <p className="text-gray-600 mb-4 text-sm">{item.description}</p>
+                            
+                            {/* Rating Display */}
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="flex items-center space-x-2">
+                                <StarRating 
+                                  rating={item.averageRating || 0} 
+                                  readonly 
+                                  size="sm" 
+                                />
+                                <span className="text-sm text-gray-600">
+                                  ({item.totalReviews || 0})
+                                </span>
+                              </div>
+                              <button
+                                onClick={() => handleViewReviews(item)}
+                                className="text-sm text-orange-600 hover:text-orange-700 font-medium"
+                              >
+                                View Reviews
+                              </button>
+                            </div>
+                            
                             <div className="flex justify-between items-center">
                               <span className="text-2xl font-bold text-black">ETB {item.price}</span>
                               <button 
@@ -212,7 +275,6 @@ export default function MenuPage() {
                 })}
               </div>
             ) : (
-              // Show filtered items
               <div className="bg-white/90 rounded-2xl shadow-xl p-8 border border-orange-200">
                 <div className="flex items-center justify-center mb-6">
                   <span className="text-4xl mr-3">
@@ -228,6 +290,27 @@ export default function MenuPage() {
                       {renderImage(item.image)}
                       <h3 className="text-xl font-bold text-orange-700 mb-2">{item.name}</h3>
                       <p className="text-gray-600 mb-4 text-sm">{item.description}</p>
+                      
+                      {/* Rating Display */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-2">
+                          <StarRating 
+                            rating={item.averageRating || 0} 
+                            readonly 
+                            size="sm" 
+                          />
+                          <span className="text-sm text-gray-600">
+                            ({item.totalReviews || 0})
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => handleViewReviews(item)}
+                          className="text-sm text-orange-600 hover:text-orange-700 font-medium"
+                        >
+                          View Reviews
+                        </button>
+                      </div>
+                      
                       <div className="flex justify-between items-center">
                         <span className="text-2xl font-bold text-black">ETB {item.price}</span>
                         <button 
@@ -250,6 +333,53 @@ export default function MenuPage() {
           </>
         )}
       </div>
+
+      {/* Review Modal */}
+      {showReviewModal && selectedItem && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-orange-700">
+                  Reviews for {selectedItem.name}
+                </h2>
+                <button
+                  onClick={() => setShowReviewModal(false)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+              
+              <div className="grid lg:grid-cols-2 gap-6">
+                {/* Review Form */}
+                <div>
+                  <ReviewForm
+                    menuItemId={selectedItem.id}
+                    menuItemName={selectedItem.name}
+                    onReviewSubmitted={handleReviewSubmitted}
+                  />
+                </div>
+                
+                {/* Review Display */}
+                <div>
+                  {loadingReviews ? (
+                    <div className="bg-white/90 rounded-2xl shadow-xl p-6 border border-orange-200">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-700 mx-auto"></div>
+                    </div>
+                  ) : (
+                    <ReviewDisplay
+                      reviews={itemReviews}
+                      averageRating={selectedItem.averageRating || 0}
+                      totalReviews={selectedItem.totalReviews || 0}
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

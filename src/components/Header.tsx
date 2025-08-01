@@ -36,8 +36,17 @@ export default function Header() {
             <Link href="/" className="text-gray-700 hover:text-orange-600 font-medium transition">
               Home
             </Link>
-            <Link href="/menu" className="text-gray-700 hover:text-orange-600 font-medium transition">
+            <Link
+              href="/menu"
+              className="text-gray-700 hover:text-orange-600 transition"
+            >
               Menu
+            </Link>
+            <Link
+              href="/orders"
+              className="text-gray-700 hover:text-orange-600 transition"
+            >
+              Orders
             </Link>
             <Link href="/about" className="text-gray-700 hover:text-orange-600 font-medium transition">
               About
@@ -61,12 +70,6 @@ export default function Header() {
               )}
             </Link>
             
-            <div className="text-sm text-gray-600">
-              <span className="font-medium">{user.email}</span>
-              <span className="ml-2 px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs">
-                {role}
-              </span>
-            </div>
             <button
               onClick={handleLogout}
               className="bg-gradient-to-r from-orange-400 to-rose-400 text-white px-4 py-2 rounded-lg font-medium hover:from-orange-500 hover:to-rose-500 transition shadow-md"
@@ -84,6 +87,9 @@ export default function Header() {
             </Link>
             <Link href="/menu" className="text-gray-700 hover:text-orange-600 font-medium transition py-2">
               Menu
+            </Link>
+            <Link href="/orders" className="text-gray-700 hover:text-orange-600 font-medium transition py-2">
+              Orders
             </Link>
             <Link href="/about" className="text-gray-700 hover:text-orange-600 font-medium transition py-2">
               About
