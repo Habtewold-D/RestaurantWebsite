@@ -4,14 +4,14 @@ import StarRating from "./StarRating";
 
 interface ReviewDisplayProps {
   reviews: Review[];
-  averageRating: number;
-  totalReviews: number;
+  averageRating?: number;
+  totalReviews?: number;
 }
 
 export default function ReviewDisplay({ 
   reviews, 
-  averageRating, 
-  totalReviews 
+  averageRating = 0, 
+  totalReviews = 0 
 }: ReviewDisplayProps) {
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('en-US', {

@@ -90,16 +90,25 @@ export const getUserOrders = async (userId: string): Promise<Order[]> => {
 // Get all orders (for admin)
 export const getAllOrders = async (): Promise<Order[]> => {
   try {
+    console.log("Fetching all orders from Firestore...");
+    console.log("Firestore instance:", db);
+    console.log("Collection path: orders");
+    
     const q = query(
       collection(db, "orders"),
       orderBy("createdAt", "desc")
     );
     
+    console.log("Query created, executing...");
     const querySnapshot = await getDocs(q);
+    console.log("Query snapshot size:", querySnapshot.size);
+    console.log("Query snapshot empty:", querySnapshot.empty);
+    
     const orders: Order[] = [];
     
     querySnapshot.forEach((doc) => {
       const data = doc.data();
+      console.log("Order data:", doc.id, data);
       orders.push({
         id: doc.id,
         ...data,
@@ -110,9 +119,15 @@ export const getAllOrders = async (): Promise<Order[]> => {
       } as Order);
     });
     
+    console.log("Processed orders:", orders);
     return orders;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error getting all orders:", error);
+    console.error("Error details:", {
+      message: error.message,
+      code: error.code,
+      stack: error.stack
+    });
     throw new Error("Failed to get all orders");
   }
 };

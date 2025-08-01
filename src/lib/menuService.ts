@@ -8,7 +8,8 @@ import {
   query, 
   orderBy,
   serverTimestamp,
-  Timestamp 
+  Timestamp,
+  writeBatch
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { MenuItem, MenuCategory, MenuFormData } from "@/types/menu";
@@ -18,6 +19,9 @@ export const addMenuItem = async (menuData: MenuFormData): Promise<string> => {
   try {
     const docRef = await addDoc(collection(db, "menuItems"), {
       ...menuData,
+      averageRating: 0,
+      totalReviews: 0,
+      reviews: [],
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
@@ -56,8 +60,10 @@ export const getMenuItems = async (): Promise<MenuItem[]> => {
     const q = query(collection(db, "menuItems"), orderBy("createdAt", "desc"));
     const querySnapshot = await getDocs(q);
     
-    return querySnapshot.docs.map(doc => {
+    const items = querySnapshot.docs.map(doc => {
       const data = doc.data();
+      console.log(`Menu item ${doc.id} data:`, data);
+      
       return {
         id: doc.id,
         name: data.name,
@@ -66,12 +72,46 @@ export const getMenuItems = async (): Promise<MenuItem[]> => {
         category: data.category,
         image: data.image,
         available: data.available,
+        averageRating: data.averageRating || 0,
+        totalReviews: data.totalReviews || 0,
+        reviews: data.reviews || [],
         createdAt: data.createdAt?.toDate() || new Date(),
         updatedAt: data.updatedAt?.toDate() || new Date(),
       } as MenuItem;
     });
+    
+    console.log("Processed menu items:", items);
+    return items;
   } catch (error) {
     console.error("Error getting menu items:", error);
+    throw error;
+  }
+};
+
+// Update existing menu items to include rating fields if they don't exist
+export const updateMenuItemsWithRatingFields = async (): Promise<void> => {
+  try {
+    const q = query(collection(db, "menuItems"));
+    const querySnapshot = await getDocs(q);
+    
+    const batch = writeBatch(db);
+    
+    querySnapshot.docs.forEach(doc => {
+      const data = doc.data();
+      if (data.averageRating === undefined || data.totalReviews === undefined || data.reviews === undefined) {
+        batch.update(doc.ref, {
+          averageRating: data.averageRating || 0,
+          totalReviews: data.totalReviews || 0,
+          reviews: data.reviews || [],
+          updatedAt: serverTimestamp(),
+        });
+      }
+    });
+    
+    await batch.commit();
+    console.log("Updated menu items with rating fields");
+  } catch (error) {
+    console.error("Error updating menu items with rating fields:", error);
     throw error;
   }
 };

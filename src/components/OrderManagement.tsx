@@ -1,24 +1,30 @@
 "use client";
 import { useEffect, useState } from "react";
-import { getAllOrders, updateOrderStatus } from "@/lib/orderService";
-import { Order, OrderStatus } from "@/types/order";
+import { getAllOrders, updateOrderStatus, createOrder } from "@/lib/orderService";
+import { Order, OrderStatus, CreateOrderData } from "@/types/order";
 
 export default function OrderManagement() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
 
   useEffect(() => {
+    console.log("OrderManagement component mounted");
     loadOrders();
   }, []);
 
   const loadOrders = async () => {
     try {
       setLoading(true);
+      setError(null);
+      console.log("Loading orders...");
       const allOrders = await getAllOrders();
+      console.log("Fetched orders:", allOrders);
       setOrders(allOrders);
     } catch (error) {
       console.error("Error loading orders:", error);
+      setError("Failed to load orders. Please check the console for details.");
     } finally {
       setLoading(false);
     }
@@ -26,10 +32,51 @@ export default function OrderManagement() {
 
   const handleStatusUpdate = async (orderId: string, newStatus: OrderStatus) => {
     try {
+      console.log("Updating order status:", orderId, "to", newStatus);
       await updateOrderStatus(orderId, newStatus);
+      console.log("Status updated successfully, reloading orders...");
       await loadOrders(); // Reload orders
     } catch (error) {
       console.error("Error updating order status:", error);
+    }
+  };
+
+  const createTestOrder = async () => {
+    try {
+      const testOrderData: CreateOrderData = {
+        userId: "test-user-id",
+        userEmail: "test@example.com",
+        userName: "Test User",
+        items: [
+          {
+            id: "test-item-1",
+            menuItemId: "test-menu-item-1",
+            name: "Test Burger",
+            price: 250,
+            quantity: 2,
+            image: "🍔",
+            category: "Burgers"
+          }
+        ],
+        total: 500,
+        deliveryFee: 50,
+        grandTotal: 550,
+        paymentMethod: "stripe",
+        deliveryAddress: {
+          street: "123 Test Street",
+          city: "Addis Ababa",
+          phone: "+251 911 123 456",
+          instructions: "Test delivery instructions"
+        }
+      };
+
+      console.log("Creating test order...");
+      const orderId = await createOrder(testOrderData);
+      console.log("Test order created with ID:", orderId);
+      await loadOrders(); // Reload orders
+    } catch (error) {
+      console.error("Error creating test order:", error);
+      setError("Failed to create test order: " + error);
     }
   };
 
@@ -100,12 +147,36 @@ export default function OrderManagement() {
           >
             Refresh
           </button>
+          <button
+            onClick={createTestOrder}
+            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
+          >
+            Create Test Order
+          </button>
         </div>
       </div>
 
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+          <strong>Error:</strong> {error}
+        </div>
+      )}
+
       {filteredOrders.length === 0 ? (
         <div className="text-center py-8">
-          <p className="text-gray-600">No orders found.</p>
+          {loading ? (
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-700 mx-auto mb-4"></div>
+          ) : orders.length === 0 ? (
+            <div>
+              <p className="text-gray-600 mb-2">No orders found in the database.</p>
+              <p className="text-sm text-gray-500">Orders will appear here once customers place them.</p>
+            </div>
+          ) : (
+            <div>
+              <p className="text-gray-600 mb-2">No orders match the selected filter.</p>
+              <p className="text-sm text-gray-500">Try changing the status filter or click "All Orders".</p>
+            </div>
+          )}
         </div>
       ) : (
         <div className="space-y-4">

@@ -4,7 +4,7 @@ import { useCart } from "@/context/CartContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { MenuItem, MenuCategory, Review } from "@/types/menu";
-import { getMenuItems, getCategories } from "@/lib/menuService";
+import { getMenuItems, getCategories, updateMenuItemsWithRatingFields } from "@/lib/menuService";
 import { getMenuItemReviews } from "@/lib/reviewService";
 import StarRating from "@/components/StarRating";
 import ReviewForm from "@/components/ReviewForm";
@@ -38,10 +38,18 @@ export default function MenuPage() {
   const loadMenuData = async () => {
     try {
       setLoadingMenu(true);
+      
+      // First, ensure all menu items have rating fields
+      await updateMenuItemsWithRatingFields();
+      
       const [items, cats] = await Promise.all([
         getMenuItems(),
         getCategories()
       ]);
+      
+      console.log("Loaded menu items:", items);
+      console.log("Sample menu item:", items[0]);
+      
       setMenuItems(items);
       setCategories(cats);
     } catch (error) {
@@ -79,13 +87,8 @@ export default function MenuPage() {
         const reviews = await getMenuItemReviews(selectedItem.id);
         setItemReviews(reviews);
         
-        // Update the menu item in the list with new rating
-        const updatedItems = menuItems.map(item => 
-          item.id === selectedItem.id 
-            ? { ...item, reviews: reviews, totalReviews: reviews.length }
-            : item
-        );
-        setMenuItems(updatedItems);
+        // Refresh the entire menu data to get updated ratings
+        await loadMenuData();
       } catch (error) {
         console.error("Error refreshing reviews:", error);
       } finally {
@@ -182,10 +185,10 @@ export default function MenuPage() {
                 <div className="flex flex-wrap justify-center gap-3">
                   <button
                     onClick={() => setSelectedCategory("all")}
-                    className={`px-4 py-2 rounded-lg font-medium transition ${
+                    className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
                       selectedCategory === "all"
-                        ? "bg-gradient-to-r from-orange-400 to-rose-400 text-white shadow-md"
-                        : "bg-orange-100 text-orange-700 hover:bg-orange-200"
+                        ? "bg-gradient-to-r from-orange-500 to-rose-500 text-white shadow-lg transform scale-105"
+                        : "bg-orange-100 text-orange-700 hover:bg-orange-200 hover:shadow-md"
                     }`}
                   >
                     All Items
@@ -194,10 +197,10 @@ export default function MenuPage() {
                     <button
                       key={category.id}
                       onClick={() => setSelectedCategory(category.name)}
-                      className={`px-4 py-2 rounded-lg font-medium transition ${
+                      className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
                         selectedCategory === category.name
-                          ? "bg-gradient-to-r from-orange-400 to-rose-400 text-white shadow-md"
-                          : "bg-orange-100 text-orange-700 hover:bg-orange-200"
+                          ? "bg-gradient-to-r from-orange-500 to-rose-500 text-white shadow-lg transform scale-105"
+                          : "bg-orange-100 text-orange-700 hover:bg-orange-200 hover:shadow-md"
                       }`}
                     >
                       <span className="mr-1">{category.emoji}</span>
@@ -236,20 +239,26 @@ export default function MenuPage() {
                             {/* Rating Display */}
                             <div className="flex items-center justify-between mb-4">
                               <div className="flex items-center space-x-2">
-                                <StarRating 
-                                  rating={item.averageRating || 0} 
-                                  readonly 
-                                  size="sm" 
-                                />
-                                <span className="text-sm text-gray-600">
-                                  ({item.totalReviews || 0})
-                                </span>
+                                {item.totalReviews > 0 ? (
+                                  <>
+                                    <StarRating 
+                                      rating={item.averageRating || 0} 
+                                      readonly 
+                                      size="sm" 
+                                    />
+                                    <span className="text-sm text-gray-600">
+                                      ({item.totalReviews || 0})
+                                    </span>
+                                  </>
+                                ) : (
+                                  <span className="text-sm text-gray-500">No reviews yet</span>
+                                )}
                               </div>
                               <button
                                 onClick={() => handleViewReviews(item)}
                                 className="text-sm text-orange-600 hover:text-orange-700 font-medium"
                               >
-                                View Reviews
+                                {item.totalReviews > 0 ? "View Reviews" : "Be First to Review"}
                               </button>
                             </div>
                             
@@ -294,20 +303,26 @@ export default function MenuPage() {
                       {/* Rating Display */}
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center space-x-2">
-                          <StarRating 
-                            rating={item.averageRating || 0} 
-                            readonly 
-                            size="sm" 
-                          />
-                          <span className="text-sm text-gray-600">
-                            ({item.totalReviews || 0})
-                          </span>
+                          {item.totalReviews > 0 ? (
+                            <>
+                              <StarRating 
+                                rating={item.averageRating || 0} 
+                                readonly 
+                                size="sm" 
+                              />
+                              <span className="text-sm text-gray-600">
+                                ({item.totalReviews || 0})
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-sm text-gray-500">No reviews yet</span>
+                          )}
                         </div>
                         <button
                           onClick={() => handleViewReviews(item)}
                           className="text-sm text-orange-600 hover:text-orange-700 font-medium"
                         >
-                          View Reviews
+                          {item.totalReviews > 0 ? "View Reviews" : "Be First to Review"}
                         </button>
                       </div>
                       
@@ -351,31 +366,38 @@ export default function MenuPage() {
                 </button>
               </div>
               
-              <div className="grid lg:grid-cols-2 gap-6">
-                {/* Review Form */}
-                <div>
+              {/* Review Display */}
+              {loadingReviews ? (
+                <div className="bg-white/90 rounded-2xl shadow-xl p-6 border border-orange-200">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-700 mx-auto"></div>
+                </div>
+              ) : itemReviews.length === 0 ? (
+                <div className="space-y-6">
+                  <div className="bg-white/90 rounded-2xl shadow-xl p-6 border border-orange-200 text-center">
+                    <div className="text-4xl mb-4">⭐</div>
+                    <h3 className="text-xl font-bold text-orange-700 mb-2">No reviews yet</h3>
+                    <p className="text-gray-600 mb-4">Be the first to review this dish!</p>
+                  </div>
                   <ReviewForm
                     menuItemId={selectedItem.id}
                     menuItemName={selectedItem.name}
                     onReviewSubmitted={handleReviewSubmitted}
                   />
                 </div>
-                
-                {/* Review Display */}
-                <div>
-                  {loadingReviews ? (
-                    <div className="bg-white/90 rounded-2xl shadow-xl p-6 border border-orange-200">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-700 mx-auto"></div>
-                    </div>
-                  ) : (
-                    <ReviewDisplay
-                      reviews={itemReviews}
-                      averageRating={selectedItem.averageRating || 0}
-                      totalReviews={selectedItem.totalReviews || 0}
-                    />
-                  )}
+              ) : (
+                <div className="space-y-6">
+                  <ReviewDisplay
+                    reviews={itemReviews}
+                    averageRating={selectedItem.averageRating || 0}
+                    totalReviews={selectedItem.totalReviews || 0}
+                  />
+                  <ReviewForm
+                    menuItemId={selectedItem.id}
+                    menuItemName={selectedItem.name}
+                    onReviewSubmitted={handleReviewSubmitted}
+                  />
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

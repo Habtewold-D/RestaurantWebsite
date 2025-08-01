@@ -4,6 +4,10 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getUserOrders } from "@/lib/orderService";
 import { Order } from "@/types/order";
+import { Review } from "@/types/menu";
+import { getMenuItemReviews } from "@/lib/reviewService";
+import StarRating from "@/components/StarRating";
+import ReviewForm from "@/components/ReviewForm";
 import Link from "next/link";
 
 export default function OrdersPage() {
@@ -11,6 +15,10 @@ export default function OrdersPage() {
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
+  const [selectedItem, setSelectedItem] = useState<{ id: string; name: string } | null>(null);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [itemReviews, setItemReviews] = useState<Review[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -33,6 +41,36 @@ export default function OrdersPage() {
       console.error("Error loading orders:", error);
     } finally {
       setLoadingOrders(false);
+    }
+  };
+
+  const handleViewReviews = async (menuItemId: string, menuItemName: string) => {
+    setSelectedItem({ id: menuItemId, name: menuItemName });
+    setShowReviewModal(true);
+    setLoadingReviews(true);
+    
+    try {
+      const reviews = await getMenuItemReviews(menuItemId);
+      setItemReviews(reviews);
+    } catch (error) {
+      console.error("Error loading reviews:", error);
+    } finally {
+      setLoadingReviews(false);
+    }
+  };
+
+  const handleReviewSubmitted = async () => {
+    if (selectedItem) {
+      // Refresh reviews
+      setLoadingReviews(true);
+      try {
+        const reviews = await getMenuItemReviews(selectedItem.id);
+        setItemReviews(reviews);
+      } catch (error) {
+        console.error("Error refreshing reviews:", error);
+      } finally {
+        setLoadingReviews(false);
+      }
     }
   };
 
@@ -158,7 +196,18 @@ export default function OrdersPage() {
                               <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
                             </div>
                           </div>
-                          <p className="font-bold text-black">ETB {(item.price * item.quantity).toFixed(2)}</p>
+                          <div className="text-right">
+                            <p className="font-bold text-black">ETB {(item.price * item.quantity).toFixed(2)}</p>
+                            {/* Show Review Button for Delivered Orders */}
+                            {order.status === 'delivered' && (
+                              <button
+                                onClick={() => handleViewReviews(item.menuItemId, item.name)}
+                                className="text-sm text-orange-600 hover:text-orange-700 font-medium mt-1"
+                              >
+                                Review Item
+                              </button>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -205,6 +254,73 @@ export default function OrdersPage() {
           )}
         </div>
       </div>
+
+      {/* Review Modal */}
+      {showReviewModal && selectedItem && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-orange-700">
+                  Reviews for {selectedItem.name}
+                </h2>
+                <button
+                  onClick={() => setShowReviewModal(false)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+              
+              <div className="grid lg:grid-cols-2 gap-6">
+                {/* Review Form */}
+                <div>
+                  <ReviewForm
+                    menuItemId={selectedItem.id}
+                    menuItemName={selectedItem.name}
+                    onReviewSubmitted={handleReviewSubmitted}
+                  />
+                </div>
+                
+                {/* Review Display */}
+                <div>
+                  {loadingReviews ? (
+                    <div className="bg-white/90 rounded-2xl shadow-xl p-6 border border-orange-200">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-700 mx-auto"></div>
+                    </div>
+                  ) : (
+                    <div className="bg-white/90 rounded-2xl shadow-xl p-6 border border-orange-200">
+                      <h3 className="text-xl font-bold text-orange-700 mb-4">Reviews</h3>
+                      {itemReviews.length === 0 ? (
+                        <p className="text-gray-600 text-center py-8">No reviews yet. Be the first to review this item!</p>
+                      ) : (
+                        <div className="space-y-4">
+                          {itemReviews.map((review) => (
+                            <div key={review.id} className="border-b border-gray-200 pb-4 last:border-b-0">
+                              <div className="flex items-start justify-between mb-2">
+                                <div>
+                                  <h4 className="font-medium text-gray-800">{review.userName}</h4>
+                                  <div className="flex items-center space-x-2 mt-1">
+                                    <StarRating rating={review.rating} readonly size="sm" />
+                                    <span className="text-xs text-gray-500">
+                                      {new Date(review.createdAt).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <p className="text-gray-700 text-sm leading-relaxed">{review.comment}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

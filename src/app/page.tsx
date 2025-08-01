@@ -2,15 +2,18 @@
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { MenuItem, MenuCategory } from "@/types/menu";
-import { getMenuItems, getCategories } from "@/lib/menuService";
+import { MenuItem, MenuCategory, Review } from "@/types/menu";
+import { getMenuItems, getCategories, updateMenuItemsWithRatingFields } from "@/lib/menuService";
+import { getAllReviews } from "@/lib/reviewService";
 import Link from "next/link";
+import StarRating from "@/components/StarRating";
 
 export default function HomePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [featuredItems, setFeaturedItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
@@ -28,15 +31,21 @@ export default function HomePage() {
   const loadHomeData = async () => {
     try {
       setLoadingData(true);
-      const [items, cats] = await Promise.all([
-        getMenuItems(),
-        getCategories()
-      ]);
       
-      // Get featured items (first 6 available items)
+      // First, ensure all menu items have rating fields
+      await updateMenuItemsWithRatingFields();
+      
+      const [items, cats, allReviews] = await Promise.all([
+        getMenuItems(),
+        getCategories(),
+        getAllReviews()
+      ]);
       const availableItems = items.filter(item => item.available);
-      setFeaturedItems(availableItems.slice(0, 6));
+      setFeaturedItems(availableItems.slice(0, 3));
       setCategories(cats);
+      // Get only approved reviews and limit to 3 for testimonials
+      const approvedReviews = allReviews.filter(review => review.approved).slice(0, 3);
+      setReviews(approvedReviews);
     } catch (error) {
       console.error("Error loading home data:", error);
     } finally {
@@ -50,12 +59,12 @@ export default function HomePage() {
         <img
           src={image}
           alt="Menu item"
-          className="w-full h-48 object-cover rounded-lg"
+          className="w-full h-64 object-cover rounded-lg"
         />
       );
     } else {
       return (
-        <div className="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center text-4xl">
+        <div className="w-full h-64 bg-gray-200 rounded-lg flex items-center justify-center text-4xl">
           {image || '🍽️'}
         </div>
       );
@@ -190,27 +199,13 @@ export default function HomePage() {
             What Our Customers Say
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-white/90 rounded-2xl p-6 border border-orange-200">
-              <div className="text-2xl mb-4">⭐⭐⭐⭐⭐</div>
-              <p className="text-gray-700 mb-4">
-                "Amazing food and excellent service! The flavors are incredible and the portions are perfect."
-              </p>
-              <div className="font-semibold text-orange-700">- Sarah M.</div>
-            </div>
-            <div className="bg-white/90 rounded-2xl p-6 border border-orange-200">
-              <div className="text-2xl mb-4">⭐⭐⭐⭐⭐</div>
-              <p className="text-gray-700 mb-4">
-                "Best restaurant in town! Fresh ingredients and authentic taste. Highly recommended!"
-              </p>
-              <div className="font-semibold text-orange-700">- John D.</div>
-            </div>
-            <div className="bg-white/90 rounded-2xl p-6 border border-orange-200">
-              <div className="text-2xl mb-4">⭐⭐⭐⭐⭐</div>
-              <p className="text-gray-700 mb-4">
-                "Great atmosphere and delicious food. The staff is friendly and the prices are reasonable."
-              </p>
-              <div className="font-semibold text-orange-700">- Maria L.</div>
-            </div>
+            {reviews.map((review) => (
+              <div key={review.id} className="bg-white/90 rounded-2xl p-6 border border-orange-200">
+                <StarRating rating={review.rating} readonly size="sm" />
+                <p className="text-gray-700 mb-4">"{review.comment}"</p>
+                <div className="font-semibold text-orange-700">- {review.userName}</div>
+              </div>
+            ))}
           </div>
         </div>
       </section>

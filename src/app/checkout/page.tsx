@@ -297,7 +297,7 @@ export default function CheckoutPage() {
                       type="text"
                       value={deliveryAddress.street}
                       onChange={(e) => handleAddressChange('street', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-black"
                       placeholder="Enter your street address"
                       required
                     />
@@ -311,7 +311,7 @@ export default function CheckoutPage() {
                       type="text"
                       value={deliveryAddress.city}
                       onChange={(e) => handleAddressChange('city', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-black"
                       placeholder="Enter your city"
                       required
                     />
@@ -325,7 +325,7 @@ export default function CheckoutPage() {
                       type="tel"
                       value={deliveryAddress.phone}
                       onChange={(e) => handleAddressChange('phone', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-black"
                       placeholder="Enter your phone number"
                       required
                     />
@@ -339,7 +339,7 @@ export default function CheckoutPage() {
                       type="text"
                       value={deliveryAddress.instructions}
                       onChange={(e) => handleAddressChange('instructions', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-black"
                       placeholder="Any special instructions?"
                     />
                   </div>

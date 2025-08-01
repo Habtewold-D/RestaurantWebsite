@@ -119,7 +119,7 @@ export default function ReviewForm({
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none text-black"
             rows={4}
             placeholder="Share your experience with this dish... (minimum 10 characters)"
             required

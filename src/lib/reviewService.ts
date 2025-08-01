@@ -40,17 +40,17 @@ export const addReview = async (reviewData: CreateReviewData): Promise<string> =
       const newTotalReviews = currentTotalReviews + 1;
       const newAverageRating = ((currentAverageRating * currentTotalReviews) + reviewData.rating) / newTotalReviews;
       
-      // Add review to menu item
+      // Add review to menu item (use regular Date instead of serverTimestamp)
       await updateDoc(menuItemRef, {
         reviews: arrayUnion({
           id: reviewRef.id,
-          menuItemId: reviewData.menuItemId, // Add menuItemId
+          menuItemId: reviewData.menuItemId,
           userId: reviewData.userId,
           userName: reviewData.userName,
           userEmail: reviewData.userEmail,
           rating: reviewData.rating,
           comment: reviewData.comment,
-          createdAt: serverTimestamp(),
+          createdAt: new Date(), // Use regular Date instead of serverTimestamp
           approved: true,
         }),
         totalReviews: newTotalReviews,
@@ -69,10 +69,9 @@ export const addReview = async (reviewData: CreateReviewData): Promise<string> =
 // Get reviews for a specific menu item
 export const getMenuItemReviews = async (menuItemId: string): Promise<Review[]> => {
   try {
+    // Get all reviews and filter client-side to avoid index requirements
     const q = query(
       collection(db, "reviews"),
-      where("menuItemId", "==", menuItemId),
-      where("approved", "==", true),
       orderBy("createdAt", "desc")
     );
     
@@ -81,11 +80,14 @@ export const getMenuItemReviews = async (menuItemId: string): Promise<Review[]> 
     
     querySnapshot.forEach((doc) => {
       const data = doc.data();
-      reviews.push({
-        id: doc.id,
-        ...data,
-        createdAt: data.createdAt?.toDate() || new Date(),
-      } as Review);
+      // Filter for the specific menu item and approved reviews
+      if (data.menuItemId === menuItemId && data.approved === true) {
+        reviews.push({
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate() || new Date(),
+        } as Review);
+      }
     });
     
     return reviews;
