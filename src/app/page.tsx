@@ -17,16 +17,9 @@ export default function HomePage() {
   const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push("/login");
-    }
-  }, [user, loading, router]);
-
-  useEffect(() => {
-    if (user) {
-      loadHomeData();
-    }
-  }, [user]);
+    // Load data regardless of authentication status
+    loadHomeData();
+  }, []);
 
   const loadHomeData = async () => {
     try {
@@ -77,10 +70,6 @@ export default function HomePage() {
         <div className="text-2xl font-semibold text-orange-700">Loading...</div>
       </div>
     );
-  }
-
-  if (!user) {
-    return null;
   }
 
   return (

@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { CartItem, Cart } from '@/types/cart';
 import { MenuItem } from '@/types/menu';
+import { useAuth } from './AuthContext';
 
 interface CartState {
   items: CartItem[];
@@ -97,12 +98,14 @@ interface CartContextType {
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
+  showLoginPrompt: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [cart, dispatch] = useReducer(cartReducer, initialState);
+  const { user } = useAuth();
 
   // Load cart from localStorage on mount
   useEffect(() => {
@@ -123,7 +126,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [cart]);
 
   const addItem = (item: MenuItem) => {
+    // Check if user is authenticated
+    if (!user) {
+      // Trigger login prompt - this will be handled by the component using the cart
+      return false;
+    }
+    
     dispatch({ type: 'ADD_ITEM', payload: item });
+    return true;
   };
 
   const removeItem = (id: string) => {
@@ -138,8 +148,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     dispatch({ type: 'CLEAR_CART' });
   };
 
+  const showLoginPrompt = () => {
+    // This will be handled by the component using the cart
+    return true;
+  };
+
   return (
-    <CartContext.Provider value={{ cart, addItem, removeItem, updateQuantity, clearCart }}>
+    <CartContext.Provider value={{ cart, addItem, removeItem, updateQuantity, clearCart, showLoginPrompt }}>
       {children}
     </CartContext.Provider>
   );

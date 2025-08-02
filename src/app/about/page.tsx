@@ -7,22 +7,12 @@ export default function AboutPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push("/login");
-    }
-  }, [user, loading, router]);
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-rose-200 via-orange-100 to-yellow-200">
         <div className="text-2xl font-semibold text-orange-700">Loading...</div>
       </div>
     );
-  }
-
-  if (!user) {
-    return null;
   }
 
   return (

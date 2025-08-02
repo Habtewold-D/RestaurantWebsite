@@ -9,6 +9,7 @@ import { getMenuItemReviews } from "@/lib/reviewService";
 import StarRating from "@/components/StarRating";
 import ReviewForm from "@/components/ReviewForm";
 import ReviewDisplay from "@/components/ReviewDisplay";
+import LoginPromptModal from "@/components/LoginPromptModal";
 
 export default function MenuPage() {
   const { user, loading } = useAuth();
@@ -22,18 +23,12 @@ export default function MenuPage() {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [itemReviews, setItemReviews] = useState<Review[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push("/login");
-    }
-  }, [user, loading, router]);
-
-  useEffect(() => {
-    if (user) {
-      loadMenuData();
-    }
-  }, [user]);
+    // Load menu data regardless of authentication status
+    loadMenuData();
+  }, []);
 
   const loadMenuData = async () => {
     try {
@@ -60,6 +55,11 @@ export default function MenuPage() {
   };
 
   const handleAddToCart = (item: MenuItem) => {
+    if (!user) {
+      setShowLoginPrompt(true);
+      return;
+    }
+    
     addItem(item);
     console.log(`Added ${item.name} to cart`);
   };
@@ -138,10 +138,6 @@ export default function MenuPage() {
         <div className="text-2xl font-semibold text-orange-700">Loading...</div>
       </div>
     );
-  }
-
-  if (!user) {
-    return null;
   }
 
   const filteredItems = selectedCategory === "all" 
@@ -402,6 +398,12 @@ export default function MenuPage() {
           </div>
         </div>
       )}
+
+      {/* Login Prompt Modal */}
+      <LoginPromptModal 
+        isOpen={showLoginPrompt} 
+        onClose={() => setShowLoginPrompt(false)} 
+      />
     </div>
   );
 } 
